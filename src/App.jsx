@@ -21,6 +21,7 @@ import Configuracao from "./pages/configuracao/Configuracao";
 import Agentes from "./pages/agentes/Agentes";
 import Planejamento from "./pages/planejamento/Planejamento";
 import Mensagens from "./pages/mensagens/Mensagens";
+import Control from "./pages/planejamento/abas/Control";
 
 function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -40,7 +41,7 @@ function App() {
   return (
     <Router>
       <Box sx={{ display: "flex" }}>
-        <AppBar position="fixed" style={{ backgroundColor: "white" }}>
+        <AppBar position="fixed" style={{color: 'black', backgroundColor: "white" }}>
           <Toolbar>
             <IconButton
               color="black"
@@ -107,6 +108,7 @@ function App() {
             <Route path="/agentes" element={<Agentes />} />
             <Route path="/configuracao" element={<Configuracao />} />
             <Route path="/login" element={<Login />} />
+            <Route path="planejamento/cadastrar/:uuid" element={<Control/>} />
           </Routes>
         </Box>
       </Box>
