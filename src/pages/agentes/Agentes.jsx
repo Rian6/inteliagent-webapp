@@ -1,44 +1,85 @@
 import React, { useEffect, useState } from "react";
-import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import { GoogleMap, LoadScript } from "@react-google-maps/api";
+import axios from "axios";
+import { SERVIDOR_MAIN } from "../../tools/config";
 
 const Agentes = () => {
-  // Estado para armazenar as localizações dos agentes
-  const [agents, setAgents] = useState([
-    { id: 1, name: "Agente 1", lat: -23.55052, lng: -46.633308 },
-    { id: 2, name: "Agente 2", lat: -22.9035, lng: -43.2096 },
-    { id: 3, name: "Agente 3", lat: -19.8157, lng: -43.9542 },
-    // Você pode adicionar mais agentes com base nos dados reais do servidor
-  ]);
+  const [agents, setAgents] = useState([]);
+  const [map, setMap] = useState(null);
+  const [infoWindow, setInfoWindow] = useState(null); // Estado para o InfoWindow
 
-  // Configuração do mapa
   const containerStyle = {
     width: "100%",
-    height: "400px",
+    height: "100%",
   };
 
   const center = {
-    lat: -23.55052, // Localização central do mapa
+    lat: -23.55052,
     lng: -46.633308,
   };
 
+  const libraries = ["places", "marker"];
+
+  useEffect(() => {
+    const fetchAgentLocations = async () => {
+      try {
+        const response = await axios.get(SERVIDOR_MAIN + "/usuario-location");
+        const data = response.data;
+
+        if (data && Array.isArray(data)) {
+          const formattedData = data.map(agent => ({
+            id: agent.nome,
+            name: agent.nome,
+            lat: parseFloat(agent.latitude),
+            lng: parseFloat(agent.longitude),
+          }));
+
+          setAgents(formattedData);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar as localizações:", error);
+      }
+    };
+
+    fetchAgentLocations();
+  }, []);
+
+  const handleMapLoad = (mapInstance) => {
+    setMap(mapInstance);
+  };
+
+  useEffect(() => {
+    if (map && window.google && window.google.maps) {
+      // Inicializa o InfoWindow
+      const newInfoWindow = new google.maps.InfoWindow();
+      setInfoWindow(newInfoWindow);
+
+      agents.forEach(agent => {
+        const marker = new google.maps.Marker({
+          position: { lat: agent.lat, lng: agent.lng },
+          map: map,
+          title: "Nome: "+agent.name+"\n"+"Latitude: "+agent.lat+"\n"+"Longitude: "+agent.lng+"\n",
+        });
+
+        marker.addListener("click", () => {
+          // Quando o marcador for clicado, abrirá o InfoWindow com o nome do agente
+          newInfoWindow.setContent(agent.name);
+          newInfoWindow.open(map, marker); // Abre o InfoWindow sobre o marcador
+        });
+      });
+    }
+  }, [map, agents]);
+
   return (
-    <div>
+    <div style={{width: '97vw', height: '70vh'}}>
       <h1>Agentes</h1>
-      <LoadScript googleMapsApiKey="AIzaSyAOQx5-tulPLEKK6tUMKztcwfngiU7r-Fo">
+      <LoadScript googleMapsApiKey="AIzaSyAOQx5-tulPLEKK6tUMKztcwfngiU7r-Fo" libraries={libraries}>
         <GoogleMap
           mapContainerStyle={containerStyle}
           center={center}
           zoom={12}
-        >
-          {/* Adicionando marcadores para cada agente */}
-          {agents.map((agent) => (
-            <Marker
-              key={agent.id}
-              position={{ lat: agent.lat, lng: agent.lng }}
-              title={agent.name}
-            />
-          ))}
-        </GoogleMap>
+          onLoad={handleMapLoad}
+        />
       </LoadScript>
     </div>
   );

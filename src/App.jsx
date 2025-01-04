@@ -35,7 +35,6 @@ function App() {
     { text: "Mensagens", path: "/mensagens" },
     { text: "Planejamento", path: "/planejamento" },
     { text: "Agentes", path: "/agentes" },
-    { text: "Configuracao", path: "/configuracao" },
   ];
 
   return (
@@ -106,7 +105,6 @@ function App() {
             <Route path="/mensagens" element={<Mensagens />} />
             <Route path="/planejamento" element={<Planejamento />} />
             <Route path="/agentes" element={<Agentes />} />
-            <Route path="/configuracao" element={<Configuracao />} />
             <Route path="/login" element={<Login />} />
             <Route path="planejamento/cadastrar/:uuid" element={<Control/>} />
           </Routes>

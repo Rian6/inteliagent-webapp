@@ -72,7 +72,7 @@ function Home() {
     <div style={styles.container}>
       <h1 style={styles.title}>Home</h1>
       <div style={{ alignSelf: 'center', width: '100%', display: 'flex', flexDirection: 'column' }}>
-        <h3>Últimas Visitas</h3>
+        <h3>Últimas Visitas Modificadas</h3>
         <TableContainer component={Paper} style={styles.tableContainer}>
           <Table>
             <TableHead>
@@ -95,8 +95,8 @@ function Home() {
         </TableContainer>
         <div style={{ width: '100%', flexDirection: 'row', display: 'flex' }}>
           <div style={styles.chartBox}>
-            <h3>Visitas por Bairro</h3>
-            <Bar data={barData} options={{ responsive: true, plugins: { title: { display: true, text: 'Visitas por Bairro' } } }} />
+            <h3>Visitas por Região</h3>
+            <Bar data={barData} options={{ responsive: true, plugins: { title: { display: true, text: 'Visitas por Região' } } }} />
           </div>
           <div style={styles.chartBox}>
             <h3>Visitas por Dia</h3>

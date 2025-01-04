@@ -9,10 +9,8 @@ export default function Formulario() {
     const navigate = useNavigate();
 
     const [nomeRegiao, setNomeRegiao] = React.useState('');
-    const [agente, setAgente] = React.useState('');
-    const [dataVisita, setDataVisita] = React.useState('');
-    const [situacao, setSituacao] = React.useState('');
-    const [categoria, setCategoria] = React.useState('');
+    const [zona, setNomeZona] = React.useState('');
+    const [situacao, setSituacao] = React.useState('0');
 
     useEffect(() => {
         if (uuid && uuid != '0') {
@@ -21,12 +19,9 @@ export default function Formulario() {
                     const resposta = await fetch(`${SERVIDOR_MAIN}/api/find-by-uuid/${uuid}`);
                     if (resposta.ok) {
                         const dados = await resposta.json();
-                        console.log(dados)
                         setNomeRegiao(dados.descricao || '');
-                        setAgente(dados.agente || '');
-                        setDataVisita(dados.dataVisita || '');
+                        setNomeZona(dados.zona || '');
                         setSituacao(dados.situacao || '');
-                        setCategoria(dados.categoria || '');
                     }
                 } catch (erro) {
                     console.error('Erro na requisição:', erro);
@@ -42,10 +37,8 @@ export default function Formulario() {
         const dadosFormulario = {
             uuid,
             nomeRegiao,
-            agente,
-            dataVisita,
+            zona,
             situacao,
-            categoria,
         };
 
         try {
@@ -131,44 +124,12 @@ export default function Formulario() {
                             }}
                         />
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <InputLabel id="agente-label" sx={{ color: '#A9007A' }}>Agente</InputLabel>
-                        <Select
-                            labelId="agente-label"
-                            value={agente}
-                            onChange={(e) => setAgente(e.target.value)}
-                            fullWidth
-                            displayEmpty
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    '& fieldset': {
-                                        borderColor: '#A9007A',
-                                    },
-                                    '&:hover fieldset': {
-                                        borderColor: '#800053',
-                                    },
-                                    '&.Mui-focused fieldset': {
-                                        borderColor: '#A9007A',
-                                    },
-                                },
-                            }}
-                        >
-                            <MenuItem value="">Selecione o Agente</MenuItem>
-                            <MenuItem value="Agente 1">Agente 1</MenuItem>
-                            <MenuItem value="Agente 2">Agente 2</MenuItem>
-                            <MenuItem value="Agente 3">Agente 3</MenuItem>
-                        </Select>
-                    </div>
                     <div style={{ flex: 1, marginTop: 23 }}>
                         <TextField
-                            label="Visita"
-                            type="date"
+                            label="Nome da Zona"
                             variant="outlined"
-                            value={dataVisita}
-                            onChange={(e) => setDataVisita(e.target.value)}
-                            InputLabelProps={{
-                                shrink: true,
-                            }}
+                            value={zona}
+                            onChange={(e) => setNomeZona(e.target.value)}
                             fullWidth
                             sx={{
                                 '& .MuiInputLabel-root': {
@@ -188,65 +149,36 @@ export default function Formulario() {
                             }}
                         />
                     </div>
-                </div>
 
-                <div style={{ display: 'flex', gap: '20px', width: '100%' }}>
-                    <div style={{ flex: 1 }}>
-                        <InputLabel id="situacao-label" sx={{ color: '#A9007A' }}>Situação</InputLabel>
-                        <Select
-                            labelId="situacao-label"
-                            value={situacao}
-                            onChange={(e) => setSituacao(e.target.value)}
-                            fullWidth
-                            displayEmpty
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    '& fieldset': {
-                                        borderColor: '#A9007A',
+                    <div style={{ display: 'flex', gap: '20px', width: '30%' }}>
+                        <div style={{ flex: 1 }}>
+                            <InputLabel id="situacao-label" sx={{ color: '#A9007A' }}>Situação</InputLabel>
+                            <Select
+                                labelId="situacao-label"
+                                value={situacao}
+                                onChange={(e) => setSituacao(e.target.value)}
+                                fullWidth
+                                displayEmpty
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': {
+                                            borderColor: '#A9007A',
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: '#800053',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: '#A9007A',
+                                        },
                                     },
-                                    '&:hover fieldset': {
-                                        borderColor: '#800053',
-                                    },
-                                    '&.Mui-focused fieldset': {
-                                        borderColor: '#A9007A',
-                                    },
-                                },
-                            }}
-                        >
-                            <MenuItem value="">Selecione a Situação</MenuItem>
-                            <MenuItem value="Ativa">Ativa</MenuItem>
-                            <MenuItem value="Inativa">Inativa</MenuItem>
-                            <MenuItem value="Pendente">Pendente</MenuItem>
-                        </Select>
-                    </div>
-
-                    <div style={{ flex: 1 }}>
-                        <InputLabel id="categoria-label" sx={{ color: '#A9007A' }}>Categoria</InputLabel>
-                        <Select
-                            labelId="categoria-label"
-                            value={categoria}
-                            onChange={(e) => setCategoria(e.target.value)}
-                            fullWidth
-                            displayEmpty
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    '& fieldset': {
-                                        borderColor: '#A9007A',
-                                    },
-                                    '&:hover fieldset': {
-                                        borderColor: '#800053',
-                                    },
-                                    '&.Mui-focused fieldset': {
-                                        borderColor: '#A9007A',
-                                    },
-                                },
-                            }}
-                        >
-                            <MenuItem value="">Selecione a Categoria</MenuItem>
-                            <MenuItem value="Categoria 1">Categoria 1</MenuItem>
-                            <MenuItem value="Categoria 2">Categoria 2</MenuItem>
-                            <MenuItem value="Categoria 3">Categoria 3</MenuItem>
-                        </Select>
+                                }}
+                            >
+                                <MenuItem value="0">Selecione a Situação</MenuItem>
+                                <MenuItem value="1">Concluido</MenuItem>
+                                <MenuItem value="2">Pendente</MenuItem>
+                                <MenuItem value="3">Executando</MenuItem>
+                            </Select>
+                        </div>
                     </div>
                 </div>
             </div>
