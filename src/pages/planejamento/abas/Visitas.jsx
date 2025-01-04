@@ -151,7 +151,7 @@ export default function VisitasMap() {
           stopover: true,
         })),
         optimizeWaypoints: true,
-        travelMode: window.google.maps.TravelMode.DRIVING,
+        travelMode: window.google.maps.TravelMode.WALKING,
       },
       (response, status) => {
         if (status === 'OK') {
@@ -258,7 +258,7 @@ export default function VisitasMap() {
           zoom={6}
         >
           {visitas.map((visita) => (
-            <Marker key={visita.id} position={{ lat: visita.lat, lng: visita.lng }} />
+            visita.lat && visita.lng && <Marker key={visita.id} position={{ lat: visita.lat, lng: visita.lng }} />
           ))}
           {directionsResponse && <DirectionsRenderer directions={directionsResponse} />}
         </GoogleMap>

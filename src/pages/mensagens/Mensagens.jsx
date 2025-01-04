@@ -25,10 +25,23 @@ function Mensagens() {
     if (id) {
       socket.emit('load_messages', { id }); // Passando id ao invés de uuid
       socket.on('all_messages', (loadedMessages) => {
+        // Adicionar apenas mensagens que ainda não estão no estado
         setMessages(loadedMessages);
       });
+
+      // Ouvindo o evento de nova mensagem
+      socket.on('receive_message', (message) => {
+        // Adicionar mensagem se ela não estiver duplicada
+        setMessages(prevMessages => {
+          const exists = prevMessages.some(msg => msg.timestamp === message.timestamp);
+          if (!exists) {
+            return [...prevMessages, message];
+          }
+          return prevMessages;
+        });
+      });
     }
-    console.log(messages)
+    console.log(messages);
   }, [id]);
 
   // Enviar mensagem
@@ -38,12 +51,12 @@ function Mensagens() {
             sender: id,
             recipient: selectedUser.id,
             text: message,
+            timestamp: new Date().toISOString(),
         };
 
-        socket.emit('send_message', data);
+        socket.emit('send_message', data); // Emitindo a mensagem para o servidor
         setMessages(prevMessages => [
-            ...prevMessages,
-            { sender: id, recipient: selectedUser.id, text: message, timestamp: new Date().toISOString() }
+            ...prevMessages
         ]);
         setMessage('');
     }
@@ -61,7 +74,7 @@ function Mensagens() {
               onClick={() => setSelectedUser(user)}
               style={{
                 ...styles.userBtn,
-                ...(selectedUser && selectedUser.id === user.id ? styles.userBtnSelected : {}),
+                ...(selectedUser && selectedUser.id == user.id ? styles.userBtnSelected : {}),
               }}
             >
               {user.nome}
