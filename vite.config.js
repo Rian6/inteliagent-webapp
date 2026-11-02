@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import mobileReleases from "./server/mobile-releases.mjs";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [mobileReleases(), react()],
   resolve: {
     alias: [{ find: /^react-native$/, replacement: "react-native-web" }],
     extensions: [
