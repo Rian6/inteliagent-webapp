@@ -32,6 +32,7 @@ export default defineConfig({
       "/usuario-location": { target: "http://127.0.0.1:8070" },
       "/users": { target: "http://127.0.0.1:5000" },
       "/attachments": { target: "http://127.0.0.1:5000" },
+      "/push": { target: "http://127.0.0.1:5000" },
       "/socket.io": { target: "http://127.0.0.1:5000", ws: true },
     },
   },

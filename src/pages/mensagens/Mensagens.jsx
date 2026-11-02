@@ -1,3 +1,4 @@
+import EmojiPicker from "../../components/EmojiPicker";
 import ChatMedia from "../../components/ChatMedia";
 import ContactAvatar from "../../components/ContactAvatar";
 import { uuid as createUuid } from "../../tools/uuid";
@@ -206,7 +207,7 @@ export default function Mensagens() {
         .then((r) => {
           if (controller.signal.aborted) return;
           setUsers(r.data.filter((u) => u.id !== user.id));
-          setSelected((current) => current ? r.data.find((u) => u.id === current.id) || current : current);
+          setSelected((current) => current ? r.data.find((u) => u.id === current.id) || current : r.data.find(u=>u.id===Number(new URLSearchParams(window.location.search).get("with"))) || null);
         })
         .catch((e) => {
           if (e.code !== "ERR_CANCELED") setError(errorMessage(e));
@@ -1013,59 +1014,15 @@ export default function Mensagens() {
               </Stack>
             )}
             {emojiOpen && !recording && (
-              <Box
-                sx={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 0.5,
-                  p: 1,
-                  mt: 1,
-                  bgcolor: "white",
-                  borderRadius: "14px",
-                }}
-              >
-                {[
-                  "😀",
-                  "😊",
-                  "👍",
-                  "✅",
-                  "🙏",
-                  "👋",
-                  "❤️",
-                  "👏",
-                  "💪",
-                  "📍",
-                  "🏠",
-                  "🦟",
-                  "⚠️",
-                  "📅",
-                  "📷",
-                  "🎉",
-                ].map((value) => (
-                  <IconButton
-                    key={value}
-                    aria-label={"Inserir emoji " + value}
-                    disabled={busy}
-                    sx={{
-                      fontSize: 24,
-                      width: 42,
-                      height: 42,
-                      minWidth: 42,
-                      minHeight: 42,
-                    }}
-                    onClick={() => {
-                      setText((current) =>
-                        current.length + value.length <= 4000
-                          ? current + value
-                          : current,
-                      );
-                      composerInput.current?.focus();
-                    }}
-                  >
-                    {value}
-                  </IconButton>
-                ))}
-              </Box>
+              <EmojiPicker disabled={busy} onSelect={(value) => {
+                const input = composerInput.current;
+                const start = input?.selectionStart ?? text.length;
+                const end = input?.selectionEnd ?? start;
+                const next = text.slice(0,start) + value + text.slice(end);
+                if (next.length > 4000) return;
+                setText(next);
+                requestAnimationFrame(() => { input?.focus(); input?.setSelectionRange(start + value.length, start + value.length); });
+              }} />
             )}
           </Box>
         </Box>

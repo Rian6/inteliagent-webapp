@@ -1,4 +1,4 @@
-import { AUTH_URL } from "../tools/config";
+import { AUTH_URL, CHAT_URL } from "../tools/config";
 let session;
 let status = { ready: false, error: "" };
 let generation = 0,
@@ -125,6 +125,13 @@ export function invalidateSession(token) {
   if (session?.token === token) publish(undefined);
 }
 export function logout() {
+  const current = getSession();
+  const installation = localStorage.getItem("inteliagent-web-push-installation");
+  if (current?.token && installation) fetch(CHAT_URL + "/push/devices/" + installation, {method:"DELETE",headers:{Authorization:"Bearer " + current.token}}).catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.getRegistration("/message-push-sw.js").then(async registration=>{
+    registration?.active?.postMessage({type:"MESSAGE_PUSH_ACCOUNT",userId:null,previousUserId:current?.id});
+    await (await registration?.pushManager.getSubscription())?.unsubscribe();
+  }).catch(()=>{});
   try {
     localStorage.setItem(logoutKey, "1");
   } catch {}

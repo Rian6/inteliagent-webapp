@@ -1,5 +1,6 @@
 import { AUTH_URL } from "./tools/config";
 import { api } from "./services/api";
+import MessagePushControl from "./components/MessagePushControl";
 import { updateProfile, updatePermissions } from "./services/session";
 import {
   lazy,
@@ -321,6 +322,7 @@ function Shell() {
             >
               Operações de campo
             </Typography>
+            <MessagePushControl user={user} />
             <IconButton component={Link} to="/perfil" aria-label="Meu perfil">
               <Avatar
                 src={user.foto || undefined}

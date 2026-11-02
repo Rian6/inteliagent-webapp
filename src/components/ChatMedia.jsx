@@ -9,9 +9,8 @@ import {
   CircularProgress,
 } from "@mui/material";
 import {
-  PlayArrowOutlined,
-  PauseOutlined,
-  DownloadOutlined,
+  PlayArrowRounded,
+  PauseRounded,
   PhotoOutlined,
   CloseOutlined,
   MicOutlined,
@@ -32,24 +31,32 @@ export default function ChatMedia({ attachment }) {
     );
   const audio = useRef(null),
     playOnLoad = useRef(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    if (attachment.kind === "image") load(controller.signal);
+    return () => controller.abort();
+  }, [attachment.id, attachment.url]);
   useEffect(
     () => () => {
       if (url) URL.revokeObjectURL(url);
     },
     [url],
   );
-  async function load() {
+  async function load(signal) {
     setBusy(true);
     setError("");
     try {
       const response = await api.get(CHAT_URL + attachment.url, {
         responseType: "blob",
+        signal,
       });
+      if (signal?.aborted) return;
       setUrl(URL.createObjectURL(response.data));
     } catch {
-      setError("Não foi possível carregar o anexo. Tente novamente.");
+      if (!signal?.aborted)
+        setError("Não foi possível carregar o anexo. Tente novamente.");
     } finally {
-      setBusy(false);
+      if (!signal?.aborted) setBusy(false);
     }
   }
   async function toggle() {
@@ -72,6 +79,7 @@ export default function ChatMedia({ attachment }) {
     : "";
   return (
     <Box
+      data-attachment-id={attachment.id}
       sx={{
         mb: 0.5,
         minWidth: attachment.kind === "audio" ? 210 : undefined,
@@ -99,17 +107,17 @@ export default function ChatMedia({ attachment }) {
                   minHeight: 40,
                   width: 40,
                   height: 40,
-                  color: "#626974",
+                  color: "white",
+                  bgcolor: "#1C1C1C",
+                  "&:hover": { bgcolor: "#38383E" },
                 }}
               >
                 {busy ? (
-                  <CircularProgress size={20} />
-                ) : !url ? (
-                  <DownloadOutlined />
+                  <CircularProgress size={20} color="inherit" />
                 ) : playing ? (
-                  <PauseOutlined sx={{ fontSize: 30 }} />
+                  <PauseRounded sx={{ fontSize: 26 }} />
                 ) : (
-                  <PlayArrowOutlined sx={{ fontSize: 30 }} />
+                  <PlayArrowRounded sx={{ fontSize: 26 }} />
                 )}
               </IconButton>
             </span>
@@ -164,7 +172,11 @@ export default function ChatMedia({ attachment }) {
                   setDuration(audio.current.duration);
                 if (playOnLoad.current) {
                   playOnLoad.current = false;
-                  audio.current.play().catch(() => {});
+                  audio.current
+                    .play()
+                    .catch(() =>
+                      setError("Toque novamente para reproduzir o áudio."),
+                    );
                 }
               }}
               onTimeUpdate={() => setPosition(audio.current.currentTime)}
@@ -195,20 +207,16 @@ export default function ChatMedia({ attachment }) {
           }}
         >
           <PhotoOutlined sx={{ fontSize: 38 }} />
-          <IconButton
-            aria-label="Ver imagem"
-            disabled={busy}
-            onClick={load}
-            sx={{
-              border: "1px solid #ADB8C5",
-              width: 40,
-              height: 40,
-              minWidth: 40,
-              minHeight: 40,
-            }}
-          >
-            {busy ? <CircularProgress size={18} /> : <DownloadOutlined />}
-          </IconButton>
+          {error ? (
+            <IconButton
+              aria-label="Tentar carregar imagem novamente"
+              onClick={() => load()}
+            >
+              <PhotoOutlined />
+            </IconButton>
+          ) : (
+            <CircularProgress size={22} aria-label="Carregando imagem" />
+          )}
           <Typography sx={{ fontSize: 11 }}>{size}</Typography>
         </Box>
       ) : (
@@ -229,6 +237,10 @@ export default function ChatMedia({ attachment }) {
             component="img"
             src={url}
             alt="Imagem enviada na conversa"
+            onError={() => {
+              setError("Não foi possível abrir a imagem.");
+              setUrl("");
+            }}
             sx={{
               display: "block",
               width: 240,
