@@ -1,194 +1,264 @@
-import React, { useEffect, useState } from 'react';
+import ReportExport from "../../components/ReportExport";
+import { useEffect, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import {
+  Stack,
   Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  Toolbar,
   Typography,
-  Paper,
   Button,
+  Paper,
+  TextField,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  TablePagination,
+  Alert,
+  LinearProgress,
   Link,
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import { SERVIDOR_MAIN } from '../../tools/config';
-
-// Cabeçalhos da tabela
-const headCells = [
-  { id: 'codigo', numeric: false, label: 'Código' },
-  { id: 'descricao', numeric: false, label: 'Descrição' },
-  { id: 'zona', numeric: false, label: 'Zona' },
-];
-
-// Função para o cabeçalho da tabela (ordenação)
-function EnhancedTableHead({ order, orderBy, onRequestSort }) {
-  const createSortHandler = (property) => (event) => {
-    onRequestSort(event, property);
-  };
-
-  return (
-    <TableHead>
-      <TableRow>
-        {headCells.map((headCell) => (
-          <TableCell key={headCell.id} align={headCell.numeric ? 'right' : 'left'}>
-            <TableSortLabel
-              active={orderBy === headCell.id}
-              direction={orderBy === headCell.id ? order : 'asc'}
-              onClick={createSortHandler(headCell.id)}
-            >
-              {headCell.label}
-            </TableSortLabel>
-          </TableCell>
-        ))}
-      </TableRow>
-    </TableHead>
-  );
-}
-
-// Barra de ferramentas com o botão de criação
-function EnhancedTableToolbar({ numSelected, onCreateNew }) {
-  return (
-    <Toolbar
-      sx={{
-        bgcolor: numSelected > 0
-          ? (theme) => alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity)
-          : 'transparent',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '0 16px',
-      }}
-    >
-      <Typography variant="h6" sx={{ flex: 1 }}>
-        {numSelected > 0 ? `${numSelected} selecionados` : 'Planejamentos'}
-      </Typography>
-      <Button
-        variant="contained"
-        style={{ backgroundColor: '#A9007A' }}
-        href="/planejamento/cadastrar/0"
-      >
-        Criar Novo Planejamento
-      </Button>
-    </Toolbar>
-  );
-}
-
-// Função principal do componente Planejamento
+  IconButton,
+  Chip,
+  MenuItem,
+} from "@mui/material";
+import { Add, EditOutlined, ChevronRight } from "@mui/icons-material";
+import { api, errorMessage } from "../../services/api";
+import { getSession } from "../../services/session";
+import { SERVIDOR_MAIN } from "../../tools/config";
 export default function Planejamento() {
-  const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('codigo');
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [rows, setRows] = useState([]);
-  const [selected, setSelected] = useState([]);
-
+  const [rows, setRows] = useState([]),
+    [query, setQuery] = useState(""),
+    [page, setPage] = useState(0),
+    [size, setSize] = useState(10);
+  const [statusFilter, setStatusFilter] = useState(0);
+  const [busy, setBusy] = useState(true),
+    [error, setError] = useState("");
   useEffect(() => {
-    // Faz a requisição para a API ao carregar o componente
-    fetch(SERVIDOR_MAIN+'/api/planejamento-list') 
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Erro ao buscar os dados');
-        }
-        return response.json();
+    const c = new AbortController();
+    api
+      .get(`${SERVIDOR_MAIN}/api/planejamento-list`, {
+        signal: c.signal,
       })
-      .then((data) => {
-        setRows(data);
+      .then((r) => setRows(r.data))
+      .catch((e) => {
+        if (e.code !== "ERR_CANCELED") setError(errorMessage(e));
       })
-      .catch((error) => {
-        console.error('Erro:', error);
-      });
+      .finally(() => setBusy(false));
+    return () => c.abort();
   }, []);
-
-  const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
-  };
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const visibleRows = React.useMemo(
-    () =>
-      rows
-        .slice()
-        .sort((a, b) => {
-          if (order === 'desc') {
-            return b[orderBy] < a[orderBy] ? -1 : 1;
-          }
-          return a[orderBy] < b[orderBy] ? -1 : 1;
-        })
-        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [rows, order, orderBy, page, rowsPerPage]
+  const filtered = rows.filter(
+    (row) =>
+      `${row.descricao} ${row.zona}`
+        .toLocaleLowerCase("pt-BR")
+        .includes(query.toLocaleLowerCase("pt-BR")) &&
+      (!statusFilter || Number(row.situacao) === statusFilter),
   );
-
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Planejamento</h1>
-      <Box sx={{ width: '100%' }}>
-        <Paper sx={{ width: '100%', mb: 2 }}>
-          <EnhancedTableToolbar numSelected={selected.length} />
-
-          <TableContainer>
-            <Table sx={{ minWidth: 750 }} size="medium">
-              <EnhancedTableHead
-                order={order}
-                orderBy={orderBy}
-                onRequestSort={handleRequestSort}
-              />
-              <TableBody>
-                {visibleRows.map((row) => (
-                  <TableRow key={row.codigo}>
-                    <TableCell align="left" component="th" scope="row">
-                      <Link href={"/planejamento/cadastrar/"+row.codigo} >
-                        {row.codigo}
-                      </Link>
-                    </TableCell>
-                    <TableCell align="left">{row.descricao}</TableCell>
-                    <TableCell align="left">{row.zona}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={rows.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </Paper>
+    <Stack spacing={3}>
+      <Stack
+        direction={{
+          xs: "column",
+          sm: "row",
+        }}
+        sx={{
+          justifyContent: "space-between",
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography component="h1" variant="h4">
+            Planejamento
+          </Typography>
+          <Typography
+            color="text.secondary"
+            sx={{
+              mt: 1,
+            }}
+          >
+            Organize regiões e acompanhe as visitas da sua sede.
+          </Typography>
+        </Box>
+        {getSession()?.permissions?.createPlanning && (
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            component={RouterLink}
+            to="/planejamento/cadastrar/0"
+          >
+            Novo planejamento
+          </Button>
+        )}
+      </Stack>
+      {error && <Alert severity="error">{error}</Alert>}
+      {busy && <LinearProgress />}
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          flexWrap: "wrap",
+        }}
+      >
+        <TextField
+          label="Buscar região ou zona"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(0);
+          }}
+          sx={{
+            flex: "1 1 260px",
+            maxWidth: 520,
+          }}
+        />
+        <TextField
+          select
+          label="Filtrar por situação"
+          value={statusFilter}
+          onChange={(event) => {
+            setStatusFilter(Number(event.target.value));
+            setPage(0);
+          }}
+          sx={{
+            minWidth: 200,
+          }}
+        >
+          {[
+            [0, "Todas as situações"],
+            [2, "Pendente"],
+            [3, "Em execução"],
+            [1, "Concluído"],
+          ].map(([value, label]) => (
+            <MenuItem key={value} value={value}>
+              {label}
+            </MenuItem>
+          ))}
+        </TextField>
       </Box>
-    </div>
+      <Paper>
+        <TableContainer>
+          <Table aria-label="Planejamentos">
+            <TableHead>
+              <TableRow>
+                <TableCell>Região</TableCell>
+                <TableCell>Zona</TableCell>
+                <TableCell>Situação</TableCell>
+                <TableCell align="center">Visitas</TableCell>
+                <TableCell align="right">Ações</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filtered.slice(page * size, page * size + size).map((row) => (
+                <TableRow key={row.codigo} hover>
+                  <TableCell>
+                    <Link
+                      component={RouterLink}
+                      to={`/planejamento/cadastrar/${row.codigo}?aba=visitas`}
+                    >
+                      {row.descricao || "Sem nome"}
+                    </Link>
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {row.zona}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      label={
+                        {
+                          1: "Concluído",
+                          2: "Pendente",
+                          3: "Em execução",
+                        }[row.situacao] || "Planejamento"
+                      }
+                      sx={{
+                        bgcolor:
+                          Number(row.situacao) === 1
+                            ? "primary.light"
+                            : "background.default",
+                        color: "text.secondary",
+                        borderRadius: "6px",
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Chip
+                      size="small"
+                      label={Number(row.quantidadeVisitas ?? 0)}
+                      aria-label={
+                        Number(row.quantidadeVisitas ?? 0) +
+                        " visitas de " +
+                        row.descricao
+                      }
+                    />
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {getSession()?.permissions?.editPlanning && (
+                      <IconButton
+                        component={RouterLink}
+                        to={`/planejamento/cadastrar/${row.codigo}?aba=geral`}
+                        aria-label={`Editar planejamento ${row.descricao}`}
+                      >
+                        <EditOutlined fontSize="small" />
+                      </IconButton>
+                    )}
+                    <ReportExport
+                      planId={row.codigo}
+                      planName={row.descricao || "planejamento"}
+                      compact
+                    />
+                    <IconButton
+                      component={RouterLink}
+                      to={`/planejamento/cadastrar/${row.codigo}?aba=visitas`}
+                      aria-label={`Ver visitas de ${row.descricao}`}
+                    >
+                      <ChevronRight />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!filtered.length && (
+                <TableRow>
+                  <TableCell colSpan={5}>
+                    Nenhum planejamento encontrado.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <TablePagination
+          component="div"
+          count={filtered.length}
+          page={page}
+          rowsPerPage={size}
+          onPageChange={(_, p) => setPage(p)}
+          onRowsPerPageChange={(e) => {
+            setSize(Number(e.target.value));
+            setPage(0);
+          }}
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from} a ${to} de ${count}`
+          }
+          getItemAriaLabel={(type) =>
+            ({
+              next: "Próxima página",
+              previous: "Página anterior",
+            })[type] || type
+          }
+          labelRowsPerPage="Por página"
+          rowsPerPageOptions={[5, 10, 25]}
+        />
+      </Paper>
+    </Stack>
   );
 }
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    width: '90vw',
-    margin: '0 auto',
-    padding: '20px',
-  },
-  title: {
-    fontSize: '2.5rem',
-    marginBottom: '30px',
-    color: '#333',
-  },
-};

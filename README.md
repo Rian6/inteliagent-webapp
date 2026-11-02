@@ -1,8 +1,13 @@
-# React + Vite
+# Inteliagent Webapp
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Painel React 19 e Material UI 9, com Vite 8, autenticação real, navegação responsiva, planejamento, visitas, aprovações e chat privado.
 
-Currently, two official plugins are available:
+```powershell
+npm ci
+npm run dev
+npm run build
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Use Node LTS 26. As URLs e a chave opcional de mapas estão em `.env.example`. Não coloque senhas ou segredos JWT em variáveis `VITE_*`, que são públicas no bundle. Tokens de acesso ficam em memória; recarregar a página exige novo login. São necessários os serviços auth, main-server e chat.
+
+O tema está em `src/theme.js`; o adaptador HTTP e o estado de sessão ficam em `src/services/`. Páginas são carregadas por rota. Os testes de navegador e o ambiente completo estão no workspace pai.

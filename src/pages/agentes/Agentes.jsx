@@ -1,88 +1,127 @@
-import React, { useEffect, useState } from "react";
-import { GoogleMap, LoadScript } from "@react-google-maps/api";
-import axios from "axios";
+import Approvals from "./Approvals";
+import RouteMap from "../../components/RouteMap";
+import { getSession } from "../../services/session";
+import { useEffect, useState } from "react";
+import {
+  GoogleMap,
+  useJsApiLoader,
+  MarkerF,
+  InfoWindowF,
+} from "@react-google-maps/api";
+import {
+  Stack,
+  Typography,
+  Alert,
+  Paper,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@mui/material";
+import { api, errorMessage } from "../../services/api";
 import { SERVIDOR_MAIN } from "../../tools/config";
-
-const Agentes = () => {
-  const [agents, setAgents] = useState([]);
-  const [map, setMap] = useState(null);
-  const [infoWindow, setInfoWindow] = useState(null); // Estado para o InfoWindow
-
-  const containerStyle = {
-    width: "100%",
-    height: "100%",
-  };
-
-  const center = {
-    lat: -23.55052,
-    lng: -46.633308,
-  };
-
-  const libraries = ["places", "marker"];
-
-  useEffect(() => {
-    const fetchAgentLocations = async () => {
-      try {
-        const response = await axios.get(SERVIDOR_MAIN + "/usuario-location");
-        const data = response.data;
-
-        if (data && Array.isArray(data)) {
-          const formattedData = data.map(agent => ({
-            id: agent.nome,
-            name: agent.nome,
-            lat: parseFloat(agent.latitude),
-            lng: parseFloat(agent.longitude),
-          }));
-
-          setAgents(formattedData);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar as localizações:", error);
-      }
-    };
-
-    fetchAgentLocations();
-  }, []);
-
-  const handleMapLoad = (mapInstance) => {
-    setMap(mapInstance);
-  };
-
-  useEffect(() => {
-    if (map && window.google && window.google.maps) {
-      // Inicializa o InfoWindow
-      const newInfoWindow = new google.maps.InfoWindow();
-      setInfoWindow(newInfoWindow);
-
-      agents.forEach(agent => {
-        const marker = new google.maps.Marker({
-          position: { lat: agent.lat, lng: agent.lng },
-          map: map,
-          title: "Nome: "+agent.name+"\n"+"Latitude: "+agent.lat+"\n"+"Longitude: "+agent.lng+"\n",
-        });
-
-        marker.addListener("click", () => {
-          // Quando o marcador for clicado, abrirá o InfoWindow com o nome do agente
-          newInfoWindow.setContent(agent.name);
-          newInfoWindow.open(map, marker); // Abre o InfoWindow sobre o marcador
-        });
-      });
-    }
-  }, [map, agents]);
-
+const key = import.meta.env.VITE_GOOGLE_MAPS_KEY;
+function AgentMap({ agents }) {
+  const { isLoaded, loadError } = useJsApiLoader({ googleMapsApiKey: key });
+  const [selected, setSelected] = useState(null);
+  if (loadError)
+    return <Alert severity="warning">Não foi possível carregar o mapa.</Alert>;
+  if (!isLoaded) return <Typography>Carregando mapa…</Typography>;
   return (
-    <div style={{width: '97vw', height: '70vh'}}>
-      <h1>Agentes</h1>
-      <LoadScript googleMapsApiKey="AIzaSyAOQx5-tulPLEKK6tUMKztcwfngiU7r-Fo" libraries={libraries}>
-        <GoogleMap
-          mapContainerStyle={containerStyle}
-          center={center}
-          zoom={12}
-          onLoad={handleMapLoad}
-        />
-      </LoadScript>
-    </div>
+    <GoogleMap
+      mapContainerStyle={{ width: "100%", height: "55vh", borderRadius: 16 }}
+      center={{ lat: -24.9555, lng: -53.4552 }}
+      zoom={12}
+    >
+      {agents
+        .filter((a) => a.latitude != null && a.longitude != null)
+        .map((a, i) => (
+          <MarkerF
+            key={i}
+            position={{ lat: Number(a.latitude), lng: Number(a.longitude) }}
+            onClick={() => setSelected(a)}
+          />
+        ))}
+      {selected && (
+        <InfoWindowF
+          position={{
+            lat: Number(selected.latitude),
+            lng: Number(selected.longitude),
+          }}
+          onCloseClick={() => setSelected(null)}
+        >
+          <span>{selected.nome}</span>
+        </InfoWindowF>
+      )}
+    </GoogleMap>
   );
-};
-
-export default Agentes;
+}
+export default function Agentes() {
+  const [agents, setAgents] = useState([]),
+    [error, setError] = useState("");
+  useEffect(() => {
+    const c = new AbortController();
+    api
+      .get(`${SERVIDOR_MAIN}/usuario-location`, { signal: c.signal })
+      .then((r) => setAgents(r.data))
+      .catch((e) => {
+        if (e.code !== "ERR_CANCELED") setError(errorMessage(e));
+      });
+    return () => c.abort();
+  }, []);
+  return (
+    <Stack spacing={3}>
+      <Typography component="h1" variant="h4">
+        Agentes
+      </Typography>
+      <Typography color="text.secondary">
+        Última localização informada pela equipe. A posição pode estar
+        desatualizada.
+      </Typography>
+      {error && <Alert severity="error">{error}</Alert>}
+      {key ? (
+        <AgentMap agents={agents} />
+      ) : (
+        <Paper sx={{ p: 2 }}>
+          <RouteMap
+            label="Última localização dos agentes"
+            connect={false}
+            visits={agents.map((agent, index) => ({
+              id: String(index),
+              nome: agent.nome,
+              lat: agent.latitude,
+              lng: agent.longitude,
+            }))}
+          />
+        </Paper>
+      )}
+      {getSession()?.role === "ADMIN" && <Approvals />}
+      <Paper sx={{ overflow: "auto" }}>
+        <Table aria-label="Agentes da sede">
+          <TableHead>
+            <TableRow>
+              <TableCell>Agente</TableCell>
+              <TableCell>Latitude</TableCell>
+              <TableCell>Longitude</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {agents.map((a, i) => (
+              <TableRow key={i}>
+                <TableCell>{a.nome}</TableCell>
+                <TableCell>{a.latitude ?? "Indisponível"}</TableCell>
+                <TableCell>{a.longitude ?? "Indisponível"}</TableCell>
+              </TableRow>
+            ))}
+            {!agents.length && (
+              <TableRow>
+                <TableCell colSpan={3}>Nenhum agente disponível.</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Paper>
+    </Stack>
+  );
+}

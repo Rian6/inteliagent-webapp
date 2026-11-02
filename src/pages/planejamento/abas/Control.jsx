@@ -1,74 +1,65 @@
-import * as React from 'react';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import Box from '@mui/material/Box';
-import Geral from './Geral'
-import Visitas from './Visitas';
-import { useParams } from 'react-router-dom';
-
-function CustomTabPanel(props) {
-  const { children, value, index, ...other } = props;
-
+import ReportExport from "../../../components/ReportExport";
+import { useParams, Link, useSearchParams } from "react-router-dom";
+import { Stack, Typography, Button, Tabs, Tab, Box } from "@mui/material";
+import Geral from "./Geral";
+import Visitas from "./Visitas";
+export default function Control() {
+  const { uuid } = useParams(),
+    [search, setSearch] = useSearchParams();
+  const tab = uuid !== "0" && search.get("aba") === "visitas" ? 1 : 0;
   return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
-function a11yProps(index) {
-  return {
-    id: `simple-tab-${index}`,
-    'aria-controls': `simple-tabpanel-${index}`,
-  };
-}
-
-export default function BasicTabs() {
-  const { uuid } = useParams();
-
-  const [value, setValue] = React.useState(0);
-
-  const handleChange = (event, newValue) => {
-    setValue(newValue);
-  };
-
-  return (
-    <Box sx={{ width: '100%' }}>
-            <h1 style={styles.title}>Planejamento</h1>
-
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
-          <Tab label="Geral" {...a11yProps(0)} />
-          {uuid && uuid != 0 ? <Tab label="Visitas" {...a11yProps(1)} /> : null}
-        </Tabs>
+    <Stack spacing={2.5}>
+      <Button
+        component={Link}
+        to="/planejamento"
+        sx={{ alignSelf: "flex-start", p: 0, minHeight: 36 }}
+      >
+        ← Voltar aos planejamentos
+      </Button>
+      <Box>
+        <Typography component="h1" variant="h4">
+          {uuid === "0" ? "Novo planejamento" : "Planejamento da localidade"}
+        </Typography>
+        <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>
+          {uuid === "0"
+            ? "Defina a localidade e o período. Depois, organize a rota."
+            : "Consulte a rota ou ajuste os dados do planejamento."}
+        </Typography>
       </Box>
-      <CustomTabPanel value={value} index={0}>
-        <Geral/>
-      </CustomTabPanel>
-      <CustomTabPanel value={value} index={1}>
-        <Visitas/>
-      </CustomTabPanel>
-    </Box>
+      {uuid !== "0" && <Box sx={{alignSelf:"flex-end"}}><ReportExport planId={uuid}/></Box>}
+      <Tabs
+        value={tab}
+        onChange={(_, value) =>
+          setSearch(
+            { aba: value === 1 ? "visitas" : "geral" },
+            { replace: true },
+          )
+        }
+        aria-label="Seções do planejamento"
+      >
+        <Tab label="Geral" id="tab-geral" aria-controls="panel-geral" />
+        {uuid !== "0" && (
+          <Tab label="Visitas" id="tab-visitas" aria-controls="panel-visitas" />
+        )}
+      </Tabs>
+      <Box
+        hidden={tab !== 0}
+        role="tabpanel"
+        id="panel-geral"
+        aria-labelledby="tab-geral"
+      >
+        <Geral key={uuid} />
+      </Box>
+      {uuid !== "0" && (
+        <Box
+          hidden={tab !== 1}
+          role="tabpanel"
+          id="panel-visitas"
+          aria-labelledby="tab-visitas"
+        >
+          <Visitas key={uuid} />
+        </Box>
+      )}
+    </Stack>
   );
-}
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    width: '90vw', // O container agora ocupa 100% da largura disponível
-    margin: '0 auto', // Centraliza o conteúdo
-    padding: '20px',
-  },
-  title: {
-    fontSize: '2.5rem',
-    marginBottom: '30px',
-    color: '#333',
-  },
 }

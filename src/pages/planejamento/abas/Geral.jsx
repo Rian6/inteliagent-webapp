@@ -1,187 +1,323 @@
-import * as React from 'react';
-import { TextField, Select, MenuItem, Button, Box, InputLabel } from '@mui/material';
-import { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { SERVIDOR_MAIN } from '../../../tools/config';
+import { planningReportErrors } from "../../../data/planning-report";
+import ReportContextFields from "../../../components/ReportContextFields";
+import { reportMetadata } from "../../../reports/pncd";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Stack,
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  MenuItem,
+  Button,
+  Alert,
+  Divider,
+} from "@mui/material";
+import { api, errorMessage } from "../../../services/api";
+import { getSession } from "../../../services/session";
+import { SERVIDOR_MAIN } from "../../../tools/config";
+import catalog from "../../../data/planning-catalog.json";
+import {
+  emptyClassification,
+  selectedClassification,
+  mergeClassification,
+  planningCycle,
+} from "../../../data/planning-fields";
+import PlanningClassification from "../../../components/PlanningClassification";
+import { Disclosure } from "../../../components/ui";
+export default function Geral() {
+  const { uuid } = useParams();
+  const navigate = useNavigate();
+  const admin =
+    !!getSession()?.permissions?.[
+      uuid === "0" ? "createPlanning" : "editPlanning"
+    ];
+  const [name, setName] = useState(""),
+    [zone, setZone] = useState(""),
+    [status, setStatus] = useState(2);
+  const [year, setYear] = useState(String(new Date().getFullYear())),
+    [date, setDate] = useState(new Date().toLocaleDateString("en-CA"));
+  const [boletim, setBoletim] = useState({});
+  const [metadata, setMetadata] = useState({});
+  const [classification, setClassification] = useState(emptyClassification()),
+    [cycle, setCycle] = useState("");
+  const [attempted, setAttempted] = useState(false);
+  const fields =
+    uuid === "0" && attempted
+      ? planningReportErrors(
+          {
+            ...classification,
+            nome: name,
+            zona: zone,
+            ano: year,
+            ciclo: cycle,
+            boletim,
+          },
+          catalog,
+        )
+      : {};
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState(""),
+    [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (uuid === "0") return;
+    const c = new AbortController();
+    setBusy(true);
+    api
+      .get(`${SERVIDOR_MAIN}/api/find-by-uuid/${uuid}`, { signal: c.signal })
+      .then(({ data }) => {
+        setBoletim({
+          ...reportMetadata(data.boletimJson),
+          municipioIbge:
+            reportMetadata(data.boletimJson).municipioIbge || data.idCidade,
+        });
+        setMetadata({
+          idCidade: data.idCidade,
+          idCategoria: data.idCategoria,
+          atividade: data.atividade,
+          tipo: data.tipo,
+          catalogoVersao: data.catalogoVersao,
+        });
+        setClassification(selectedClassification(data, catalog));
+        setCycle(data.ciclo ?? "");
+        setYear(String(data.ano || new Date().getFullYear()).slice(0, 4));
+        setDate(
+          String(
+            data.dataUltVisita || new Date().toLocaleDateString("en-CA"),
+          ).slice(0, 10),
+        );
+        setName(data.descricao || "");
+        setZone(data.zona || "");
+        setStatus(data.situacao || 2);
+      })
+      .catch((e) => {
+        if (e.code !== "ERR_CANCELED") setError(errorMessage(e));
+      })
+      .finally(() => setBusy(false));
+    return () => c.abort();
+  }, [uuid]);
+  async function save(event) {
+    event.preventDefault();
+    setAttempted(true);
+    if (uuid === "0") {
+      const errors = planningReportErrors(
+        {
+          ...classification,
+          nome: name,
+          zona: zone,
+          ano: year,
+          ciclo: cycle,
+          boletim,
+        },
+        catalog,
+      );
+      if (Object.keys(errors).length) {
+        setError("Preencha os campos obrigatórios do planejamento.");
+        return;
+      }
+    }
 
-export default function Formulario() {
-    const { uuid } = useParams();
-    const navigate = useNavigate();
-
-    const [nomeRegiao, setNomeRegiao] = React.useState('');
-    const [zona, setNomeZona] = React.useState('');
-    const [situacao, setSituacao] = React.useState('0');
-
-    useEffect(() => {
-        if (uuid && uuid != '0') {
-            const buscarDados = async () => {
-                try {
-                    const resposta = await fetch(`${SERVIDOR_MAIN}/api/find-by-uuid/${uuid}`);
-                    if (resposta.ok) {
-                        const dados = await resposta.json();
-                        setNomeRegiao(dados.descricao || '');
-                        setNomeZona(dados.zona || '');
-                        setSituacao(dados.situacao || '');
-                    }
-                } catch (erro) {
-                    console.error('Erro na requisição:', erro);
-                    alert('Erro ao tentar carregar os dados.');
-                }
-            };
-
-            buscarDados();
-        }
-    }, [uuid]);
-
-    const salvarDados = async () => {
-        const dadosFormulario = {
-            uuid,
-            nomeRegiao,
-            zona,
-            situacao,
-        };
-
-        try {
-            const resposta = await fetch(`${SERVIDOR_MAIN}/api/planejamento/salvar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(dadosFormulario),
-            });
-            const resultado = await resposta.json();
-            if (resposta.status === 200) {
-                console.log('Dados salvos com sucesso:', resultado);
-                alert('Dados salvos com sucesso!');
-                navigate(`/planejamento/cadastrar/${resultado.uuid}`);
-            } else {
-                console.error('Erro ao salvar os dados:', resposta.statusText);
-                alert('Erro ao salvar os dados.');
-            }
-        } catch (erro) {
-            console.error('Erro na requisição:', erro);
-            alert('Erro ao tentar salvar os dados.');
-        }
-    };
-
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        salvarDados();
-    };
-
-    return (
-        <div style={{
-            width: '90vw',
-            padding: '20px',
-            position: 'relative',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            marginTop: '10px',
-        }}>
-            <Button
-                variant="contained"
-                color="primary"
-                sx={{
-                    position: 'absolute',
-                    top: '0px',
-                    right: '20px',
-                    backgroundColor: '#A9007A',
-                    '&:hover': {
-                        backgroundColor: '#800053',
-                    },
-                }}
-                onClick={handleSubmit}
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      setError("Informe uma data da visita válida.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setSaved(false);
+    try {
+      const { data } = await api.post(
+        `${SERVIDOR_MAIN}/api/planejamento/salvar`,
+        {
+          ...mergeClassification(metadata, classification, catalog),
+          uuid,
+          boletimJson: JSON.stringify(boletim),
+          nomeRegiao: name,
+          zona: zone,
+          situacao: status,
+          ano: year + "-01-01",
+          ciclo: planningCycle(cycle),
+          dataUltVisita: date + " 00:00:00",
+        },
+      );
+      setSaved(true);
+      navigate(
+        `/planejamento/cadastrar/${data.uuid}?aba=${uuid === "0" ? "visitas" : "geral"}`,
+        { replace: true },
+      );
+    } catch (e) {
+      setError(e.response ? errorMessage(e) : e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Paper
+      component="form"
+      noValidate
+      onSubmit={save}
+      sx={{ p: { xs: 2, sm: 3 }, maxWidth: 1000 }}
+    >
+      <Stack spacing={3}>
+        {error && <Alert severity="error">{error}</Alert>}
+        {saved && <Alert severity="success">Planejamento salvo.</Alert>}
+        <Box>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Localidade
+          </Typography>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 2,
+            }}
+          >
+            <TextField
+              required
+              error={!!fields.nome}
+              helperText={fields.nome}
+              label="Nome da região"
+              value={name}
+              disabled={!admin || busy}
+              onChange={(event) => setName(event.target.value)}
+              slotProps={{ htmlInput: { maxLength: 255 } }}
+            />
+            <ReportContextFields
+              value={boletim}
+              onChange={setBoletim}
+              disabled={!admin || busy}
+              required={uuid === "0"}
+              errors={fields}
+            />
+            <TextField
+              required={uuid === "0"}
+              error={!!fields.zona}
+              helperText={fields.zona}
+              label="Zona"
+              value={zone}
+              disabled={!admin || busy}
+              onChange={(event) => setZone(event.target.value)}
+              slotProps={{ htmlInput: { maxLength: 255 } }}
+            />
+          </Box>
+        </Box>
+        <Box>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
+            Supervisor:{" "}
+            {boletim.supervisorNome ||
+              (uuid === "0"
+                ? getSession()?.nome
+                : "Responsável não identificado")}
+          </Typography>
+          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            O supervisor é definido automaticamente. A conclusão da localidade
+            acompanha as visitas realizadas.
+          </Typography>
+        </Box>
+        <Box>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Período e andamento
+          </Typography>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 2,
+            }}
+          >
+            <TextField
+              required
+              error={!!fields.ano}
+              helperText={fields.ano}
+              label="Ano"
+              type="number"
+              value={year}
+              disabled={!admin || busy}
+              onChange={(event) => setYear(event.target.value)}
+              slotProps={{ htmlInput: { min: 1900, max: 9999 } }}
+            />
+            <TextField
+              required={uuid === "0"}
+              error={!!fields.ciclo}
+              helperText={fields.ciclo}
+              label="Ciclo"
+              type="number"
+              value={cycle}
+              disabled={!admin || busy}
+              onChange={(event) => setCycle(event.target.value)}
+              slotProps={{ htmlInput: { min: 0, max: 99, step: 1 } }}
+            />
+            <TextField
+              required
+              label="Data da visita"
+              type="date"
+              value={date}
+              disabled={!admin || busy}
+              onChange={(event) => setDate(event.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <TextField
+              select
+              label="Situação"
+              value={status}
+              disabled={!admin || busy}
+              onChange={(event) => setStatus(Number(event.target.value))}
             >
-                Salvar
+              <MenuItem value={2}>Pendente</MenuItem>
+              <MenuItem value={3}>Em execução</MenuItem>
+              <MenuItem value={1}>Concluído</MenuItem>
+            </TextField>
+          </Box>
+        </Box>
+        {uuid === "0" ? (
+          <PlanningClassification
+            value={classification}
+            onChange={setClassification}
+            disabled={!admin || busy}
+            required
+            errors={fields}
+          />
+        ) : (
+          <Disclosure
+            title="Classificação do planejamento"
+            summary="Município, categoria, atividade e tipo da localidade"
+          >
+            <PlanningClassification
+              value={classification}
+              onChange={setClassification}
+              disabled={!admin || busy}
+              legacy={!metadata.catalogoVersao}
+            />
+          </Disclosure>
+        )}
+        {admin && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 2,
+              flexWrap: "wrap",
+              pt: 1,
+              borderTop: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              {uuid === "0"
+                ? "Após salvar, adicione os imóveis da rota."
+                : "As alterações serão recebidas automaticamente pelo aplicativo."}
+            </Typography>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={busy || (uuid !== "0" && !name.trim())}
+            >
+              {busy ? "Salvando…" : "Salvar planejamento"}
             </Button>
-            <h2>Geral</h2>
-
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ display: 'flex', gap: '20px', width: '100%' }}>
-                    <div style={{ flex: 1, marginTop: 23 }}>
-                        <TextField
-                            label="Nome da Região"
-                            variant="outlined"
-                            value={nomeRegiao}
-                            onChange={(e) => setNomeRegiao(e.target.value)}
-                            fullWidth
-                            sx={{
-                                '& .MuiInputLabel-root': {
-                                    color: '#A9007A',
-                                },
-                                '& .MuiOutlinedInput-root': {
-                                    '& fieldset': {
-                                        borderColor: '#A9007A',
-                                    },
-                                    '&:hover fieldset': {
-                                        borderColor: '#800053',
-                                    },
-                                    '&.Mui-focused fieldset': {
-                                        borderColor: '#A9007A',
-                                    },
-                                },
-                            }}
-                        />
-                    </div>
-                    <div style={{ flex: 1, marginTop: 23 }}>
-                        <TextField
-                            label="Nome da Zona"
-                            variant="outlined"
-                            value={zona}
-                            onChange={(e) => setNomeZona(e.target.value)}
-                            fullWidth
-                            sx={{
-                                '& .MuiInputLabel-root': {
-                                    color: '#A9007A',
-                                },
-                                '& .MuiOutlinedInput-root': {
-                                    '& fieldset': {
-                                        borderColor: '#A9007A',
-                                    },
-                                    '&:hover fieldset': {
-                                        borderColor: '#800053',
-                                    },
-                                    '&.Mui-focused fieldset': {
-                                        borderColor: '#A9007A',
-                                    },
-                                },
-                            }}
-                        />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '20px', width: '30%' }}>
-                        <div style={{ flex: 1 }}>
-                            <InputLabel id="situacao-label" sx={{ color: '#A9007A' }}>Situação</InputLabel>
-                            <Select
-                                labelId="situacao-label"
-                                value={situacao}
-                                onChange={(e) => setSituacao(e.target.value)}
-                                fullWidth
-                                displayEmpty
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        '& fieldset': {
-                                            borderColor: '#A9007A',
-                                        },
-                                        '&:hover fieldset': {
-                                            borderColor: '#800053',
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: '#A9007A',
-                                        },
-                                    },
-                                }}
-                            >
-                                <MenuItem value="0">Selecione a Situação</MenuItem>
-                                <MenuItem value="1">Concluido</MenuItem>
-                                <MenuItem value="2">Pendente</MenuItem>
-                                <MenuItem value="3">Executando</MenuItem>
-                            </Select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+          </Box>
+        )}
+      </Stack>
+    </Paper>
+  );
 }
