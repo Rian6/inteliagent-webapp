@@ -10,7 +10,7 @@ import {
   WebDashboard,
 } from "./Mockups";
 
-const CONTACT_EMAIL = "inteliagent@hotmail.com";
+const CONTACT_EMAIL = "suporte@inteliagent.com.br";
 
 function useReveal() {
   const rootRef = useRef(null);
