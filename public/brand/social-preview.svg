@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<defs><linearGradient id="background" x2="1" y2="1"><stop stop-color="#131316"/><stop offset="1" stop-color="#152a40"/></linearGradient></defs>
+<rect width="1200" height="630" fill="url(#background)"/>
+<circle cx="1110" cy="300" r="270" fill="none" stroke="#8abdf5" stroke-opacity=".18"/>
+<circle cx="1110" cy="300" r="205" fill="none" stroke="#8abdf5" stroke-opacity=".18"/>
+<image x="66" y="62" width="70" height="70" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiPjxyZWN0IHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiIHJ4PSIyMjQiIGZpbGw9IiMxQzFDMUMiLz48Y2lyY2xlIGN4PSI1MTIiIGN5PSIyOTAiIHI9IjY4IiBmaWxsPSIjOEFCREY1Ii8+PHJlY3QgeD0iNDUwIiB5PSI0MTIiIHdpZHRoPSIxMjQiIGhlaWdodD0iMzU2IiByeD0iNjIiIGZpbGw9IndoaXRlIi8+PHBhdGggZD0iTTMyMCA2OTRWNDU2YzAtMTEyIDg3LTIwMiAxOTItMjAyIiBmaWxsPSJub25lIiBzdHJva2U9IiM4QUJERjUiIHN0cm9rZS13aWR0aD0iMjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iLjQ1Ii8+PGNpcmNsZSBjeD0iMzIwIiBjeT0iNzIyIiByPSIyOCIgZmlsbD0iIzhBQkRGNSIvPjwvc3ZnPg=="/>
+<g font-family="Arial,sans-serif"><text x="156" y="104" fill="#f5f5f7" font-size="36" font-weight="700">INTELIAGENT</text>
+<text x="72" y="256" fill="#f5f5f7" font-size="64" font-weight="700">Vigilância em saúde,</text>
+<text x="72" y="336" fill="#8abdf5" font-size="64" font-weight="700">em campo e na sede.</text>
+<text x="76" y="423" fill="#d0d9e5" font-size="28">Visitas offline · Planejamento · Boletim PNCD</text>
+<text x="76" y="547" fill="#8abdf5" font-size="26">inteliagent.com.br</text></g></svg>

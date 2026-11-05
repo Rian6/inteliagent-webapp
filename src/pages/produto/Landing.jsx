@@ -17,6 +17,7 @@ function useReveal() {
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
+    document.getElementById("root")?.removeAttribute("data-prerendered");
     const elements = root.querySelectorAll(".lp-reveal");
     if (typeof IntersectionObserver === "undefined") {
       elements.forEach((el) => el.classList.add("is-in"));
@@ -254,7 +255,8 @@ export default function Landing() {
               na palma da mão.
             </h1>
             <p className="lead">
-              O Inteliagent organiza a rotina completa da vigilância em saúde:
+              O Inteliagent é o software para agentes de combate às endemias e
+              equipes de vigilância em saúde. Organize a rotina completa:
               planejamento por localidade, visitas sem papel com coleta de amostras,
               tratamento, mensagens com a sede e o registro diário PNCD —
               offline em campo, sincronizado na hora certa.
@@ -310,7 +312,7 @@ export default function Landing() {
         <div className="lp-container">
           <div className="lp-section-head lp-reveal">
             <p className="lp-eyebrow">O aplicativo Android</p>
-            <h2 id="lp-app-title">Feito para quem está na rua, não atrás de uma mesa.</h2>
+            <h2 id="lp-app-title">Aplicativo offline para agentes de combate às endemias.</h2>
             <p>
               Formulário guiado em etapas, CEP com busca automática, depósito por
               depósito, fotos da amostra e o boletim pronto no fim do dia —
@@ -339,7 +341,7 @@ export default function Landing() {
         <div className="lp-container">
           <div className="lp-section-head lp-reveal">
             <p className="lp-eyebrow">A plataforma web</p>
-            <h2 id="lp-web-title">A sede enxerga o campo em tempo real.</h2>
+            <h2 id="lp-web-title">Plataforma web para a vigilância em saúde da sua cidade.</h2>
             <p>
               O que a equipe de campo faz no celular aparece na hora para
               gestores e administradores — métricas, rotas, agentes e mensagens,

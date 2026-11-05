@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /users
+Disallow: /attachments
+Disallow: /socket.io/
+Disallow: /push
+Disallow: /mobile/releases/
+
+Sitemap: https://inteliagent.com.br/sitemap.xml

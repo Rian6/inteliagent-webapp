@@ -1,5 +1,11 @@
 # Inteliagent Webapp
 
+## Busca e indexação
+
+A página pública é gerada em HTML durante `npm run build`, com o mesmo componente React usado no navegador. O build verifica conteúdo, metadados, URL canônica, dados estruturados, sitemap e imagem de compartilhamento. As telas internas usam um HTML separado com `noindex`; a autenticação continua obrigatória nas APIs.
+
+O endereço canônico é https://inteliagent.com.br/. O Nginx redireciona www para esse endereço. O sitemap público está em https://inteliagent.com.br/sitemap.xml e deve ser enviado no Google Search Console após verificar a propriedade do domínio. Melhorias técnicas ajudam o rastreamento; indexação e posição nos resultados são decididas pelo Google.
+
 Painel React 19 e Material UI 9, com Vite 8, autenticação real, navegação responsiva, planejamento, visitas, aprovações e chat privado.
 
 ```powershell

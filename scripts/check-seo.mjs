@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const html = await readFile('dist/index.html', 'utf8');
+const app = await readFile('dist/app.html', 'utf8');
+assert.equal((html.match(/<h1\b/g) || []).length, 1, 'The public HTML needs one visible main heading');
+assert.match(html, /agentes de combate às endemias/);
+assert.match(html, /suporte@inteliagent\.com\.br/);
+assert.match(html, /<meta name="robots" content="index,follow,max-image-preview:large"/);
+assert.equal((html.match(/rel="canonical"/g) || []).length, 1);
+assert.match(html, /rel="canonical" href="https:\/\/inteliagent\.com\.br\/"/);
+const structured = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+assert.equal(structured['@graph'].find(item => item['@type'] === 'WebSite').url, 'https://inteliagent.com.br/');
+assert.match(app, /<meta name="robots" content="noindex,nofollow"/);
+assert.match(app, /<div id="root"><\/div>/);
+assert.ok(!app.includes('class="lp-page"'), 'Private routes must not include the public landing snapshot');
+assert.ok(!app.includes('rel="canonical"'), 'Private routes must not claim to be the public homepage');
+const robots = await readFile('dist/robots.txt', 'utf8');
+assert.match(robots, /Sitemap: https:\/\/inteliagent\.com\.br\/sitemap\.xml/);
+assert.ok(!robots.includes('Disallow: /\n'), 'The public page must remain crawlable');
+const sitemap = await readFile('dist/sitemap.xml', 'utf8');
+assert.equal((sitemap.match(/<loc>/g) || []).length, 1);
+assert.match(sitemap, /<loc>https:\/\/inteliagent\.com\.br\/<\/loc>/);
+const image = await readFile('dist/brand/social-preview.png');
+assert.equal(image.readUInt32BE(16), 1200);
+assert.equal(image.readUInt32BE(20), 630);
+console.log('SEO checks passed: static public content, canonical URL, metadata, schema, sitemap, image and private noindex shell.');
