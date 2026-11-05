@@ -53,6 +53,7 @@ import {
   logout,
 } from "./services/session";
 import Login from "./pages/login/Login";
+import Landing from "./pages/produto/Landing";
 import { design } from "./design";
 const Perfil = lazy(() => import("./pages/perfil/Perfil"));
 const Home = lazy(() => import("./pages/home/Home"));
@@ -389,7 +390,10 @@ function Shell() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Shell />
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="*" element={<Shell />} />
+      </Routes>
     </BrowserRouter>
   );
 }
