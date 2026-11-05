@@ -16,3 +16,5 @@ O tema está em `src/theme.js`; o adaptador HTTP e o estado de sessão ficam em 
 ## CI/CD e produção
 
 O workflow `.github/workflows/ci.yml` valida pushes e pull requests. Consulte a [infraestrutura e operação](https://github.com/Rian6/inteliagent-infra). Configure variáveis a partir de `.env.example`; segredos ficam em arquivos privados no servidor e GitHub Secrets. Não publique tokens, senhas ou arquivos de assinatura.
+
+O container de produ??o serve o bundle est?tico pelo Nginx e encaminha APIs pela mesma origem HTTPS. Defina VITE_USE_API_PROXY=true ao compilar para esse ambiente. O endpoint /healthz verifica o Nginx; o deploy tamb?m testa a autentica??o das APIs pelo proxy.
