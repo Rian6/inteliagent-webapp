@@ -1,6 +1,7 @@
 FROM node:26-bookworm-slim AS build
 WORKDIR /app
 COPY package*.json ./
+COPY .npmrc ./
 RUN npm ci
 COPY . .
 ENV VITE_USE_API_PROXY=true
